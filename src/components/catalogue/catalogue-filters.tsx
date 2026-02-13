@@ -4,12 +4,56 @@ import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Box, Text, Group, UnstyledButton } from "@mantine/core";
+import { SlidersHorizontal, RotateCcw } from "lucide-react";
+
+const TEAL = "#4FAAA3";
+const TEAL_DARK = "#215F5A";
 
 type Props = {
   brands: string[];
   cities: string[];
   currentFilters: Record<string, string | undefined>;
+};
+
+const selectStyle: React.CSSProperties = {
+  width: "100%",
+  borderRadius: 10,
+  border: "1.5px solid #e0e8e8",
+  padding: "10px 14px",
+  fontSize: 14,
+  color: "#1a2332",
+  background: "#fafcfc",
+  outline: "none",
+  transition: "border-color 0.2s ease",
+  appearance: "none" as const,
+  WebkitAppearance: "none" as const,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234FAAA3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 12px center",
+  paddingRight: 36,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  borderRadius: 10,
+  border: "1.5px solid #e0e8e8",
+  padding: "10px 14px",
+  fontSize: 14,
+  color: "#1a2332",
+  background: "#fafcfc",
+  outline: "none",
+  transition: "border-color 0.2s ease",
+};
+
+const labelStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#5a6a7e",
+  textTransform: "uppercase" as const,
+  letterSpacing: 0.8,
+  marginBottom: 6,
+  display: "block",
 };
 
 export function CatalogueFilters({ brands, cities, currentFilters }: Props) {
@@ -26,27 +70,56 @@ export function CatalogueFilters({ brands, cities, currentFilters }: Props) {
       } else {
         params.delete(key);
       }
-      params.delete("page"); // Reset page on filter change
+      params.delete("page");
       router.push(`${pathname}?${params.toString()}`);
     },
     [searchParams, router, pathname]
   );
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 sticky top-20">
-      <div className="flex items-center gap-2 mb-6">
-        <SlidersHorizontal className="h-5 w-5 text-gray-600" />
-        <h2 className="font-semibold text-gray-900">{t("filterType")}</h2>
-      </div>
+    <Box
+      style={{
+        background: "#FFFFFF",
+        borderRadius: 16,
+        padding: 24,
+        border: "1px solid #e8eeee",
+        position: "sticky",
+        top: 90,
+      }}
+    >
+      {/* Header */}
+      <Group gap={10} mb={24}>
+        <Box
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: "#e6f7f5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <SlidersHorizontal size={18} style={{ color: TEAL }} />
+        </Box>
+        <Text
+          style={{
+            fontWeight: 700,
+            fontSize: 16,
+            color: "#1a2332",
+            fontFamily: '"Inter Tight", system-ui, sans-serif',
+          }}
+        >
+          {t("filterType")}
+        </Text>
+      </Group>
 
-      <div className="space-y-5">
+      <Box style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Type */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-            {t("filterType")}
-          </label>
+        <Box>
+          <label style={labelStyle}>{t("filterType")}</label>
           <select
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={selectStyle}
             value={currentFilters.type || "all"}
             onChange={(e) => updateFilter("type", e.target.value)}
           >
@@ -54,15 +127,13 @@ export function CatalogueFilters({ brands, cities, currentFilters }: Props) {
             <option value="SALE">{t("typeSale")}</option>
             <option value="RENT">{t("typeRent")}</option>
           </select>
-        </div>
+        </Box>
 
         {/* Brand */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-            {t("filterBrand")}
-          </label>
+        <Box>
+          <label style={labelStyle}>{t("filterBrand")}</label>
           <select
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={selectStyle}
             value={currentFilters.brand || "all"}
             onChange={(e) => updateFilter("brand", e.target.value)}
           >
@@ -73,15 +144,13 @@ export function CatalogueFilters({ brands, cities, currentFilters }: Props) {
               </option>
             ))}
           </select>
-        </div>
+        </Box>
 
         {/* City */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-            {t("filterCity")}
-          </label>
+        <Box>
+          <label style={labelStyle}>{t("filterCity")}</label>
           <select
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={selectStyle}
             value={currentFilters.city || "all"}
             onChange={(e) => updateFilter("city", e.target.value)}
           >
@@ -92,74 +161,67 @@ export function CatalogueFilters({ brands, cities, currentFilters }: Props) {
               </option>
             ))}
           </select>
-        </div>
+        </Box>
 
         {/* Fuel */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-            {t("filterFuel")}
-          </label>
+        <Box>
+          <label style={labelStyle}>{t("filterFuel")}</label>
           <select
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={selectStyle}
             value={currentFilters.fuel || "all"}
             onChange={(e) => updateFilter("fuel", e.target.value)}
           >
-            <option value="all">Tous</option>
-            <option value="GASOLINE">Essence</option>
-            <option value="DIESEL">Diesel</option>
-            <option value="ELECTRIC">Électrique</option>
-            <option value="HYBRID">Hybride</option>
-            <option value="LPG">GPL</option>
+            <option value="all">{t("allFuels")}</option>
+            <option value="GASOLINE">{t("gasoline")}</option>
+            <option value="DIESEL">{t("diesel")}</option>
+            <option value="ELECTRIC">{t("electric")}</option>
+            <option value="HYBRID">{t("hybrid")}</option>
+            <option value="LPG">{t("lpg")}</option>
           </select>
-        </div>
+        </Box>
 
         {/* Transmission */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-            {t("filterTransmission")}
-          </label>
+        <Box>
+          <label style={labelStyle}>{t("filterTransmission")}</label>
           <select
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={selectStyle}
             value={currentFilters.transmission || "all"}
             onChange={(e) => updateFilter("transmission", e.target.value)}
           >
-            <option value="all">Toutes</option>
-            <option value="MANUAL">Manuelle</option>
-            <option value="AUTOMATIC">Automatique</option>
+            <option value="all">{t("allTransmissions")}</option>
+            <option value="MANUAL">{t("manual")}</option>
+            <option value="AUTOMATIC">{t("automatic")}</option>
           </select>
-        </div>
+        </Box>
 
-        {/* Price Range */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+        {/* Price range */}
+        <Box>
+          <label style={labelStyle}>
             {t("filterPriceMin")} / {t("filterPriceMax")}
           </label>
-          <div className="flex gap-2">
+          <Group gap={8} grow>
             <input
               type="number"
               placeholder="Min"
-              className="w-1/2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={inputStyle}
               defaultValue={currentFilters.priceMin || ""}
               onBlur={(e) => updateFilter("priceMin", e.target.value)}
             />
             <input
               type="number"
               placeholder="Max"
-              className="w-1/2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              style={inputStyle}
               defaultValue={currentFilters.priceMax || ""}
               onBlur={(e) => updateFilter("priceMax", e.target.value)}
             />
-          </div>
-        </div>
+          </Group>
+        </Box>
 
         {/* Sort */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-1.5 block">
-            <Search className="h-4 w-4 inline mr-1" />
-            Trier par
-          </label>
+        <Box>
+          <label style={labelStyle}>{t("sortBy")}</label>
           <select
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            style={selectStyle}
             value={currentFilters.sort || "recent"}
             onChange={(e) => updateFilter("sort", e.target.value)}
           >
@@ -168,16 +230,39 @@ export function CatalogueFilters({ brands, cities, currentFilters }: Props) {
             <option value="price_desc">{t("sortPriceDesc")}</option>
             <option value="popular">{t("sortPopular")}</option>
           </select>
-        </div>
+        </Box>
 
         {/* Reset */}
-        <button
+        <UnstyledButton
           onClick={() => router.push(pathname)}
-          className="w-full mt-2 py-2.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+          style={{
+            width: "100%",
+            padding: "12px 0",
+            textAlign: "center",
+            fontSize: 14,
+            fontWeight: 600,
+            color: TEAL_DARK,
+            background: "#e6f7f5",
+            borderRadius: 10,
+            transition: "background 0.2s ease",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+          }}
         >
-          Réinitialiser les filtres
-        </button>
-      </div>
-    </div>
+          <RotateCcw size={15} />
+          {t("resetFilters")}
+        </UnstyledButton>
+      </Box>
+
+      {/* Focus styles */}
+      <style>{`
+        select:focus, input[type="number"]:focus {
+          border-color: ${TEAL} !important;
+          box-shadow: 0 0 0 3px rgba(79, 170, 163, 0.12);
+        }
+      `}</style>
+    </Box>
   );
 }

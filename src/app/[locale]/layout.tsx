@@ -2,20 +2,18 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter_Tight } from "next/font/google";
+import { MantineProvider, ColorSchemeScript } from "@mantine/core";
 import { routing } from "@/i18n/routing";
-import { Header } from "@/components/shared/header";
-import { Footer } from "@/components/shared/footer";
+import { HeaderTransparent } from "@/components/shared/header-transparent";
+import { ConditionalFooter } from "@/components/shared/conditional-footer";
+import { laukarsTheme } from "@/lib/theme";
 import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const interTight = Inter_Tight({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter-tight",
 });
 
 export const metadata: Metadata = {
@@ -52,14 +50,25 @@ export default async function LocaleLayout({ children, params }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <ColorSchemeScript defaultColorScheme="light" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-white text-gray-900`}
+        className={interTight.variable}
+        style={{
+          fontFamily: '"Inter Tight", system-ui, sans-serif',
+          margin: 0,
+          minHeight: "100vh",
+        }}
+        suppressHydrationWarning
       >
-        <NextIntlClientProvider messages={messages}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </NextIntlClientProvider>
+        <MantineProvider theme={laukarsTheme}>
+          <NextIntlClientProvider messages={messages}>
+            <HeaderTransparent />
+            <main style={{ flex: 1 }}>{children}</main>
+            <ConditionalFooter />
+          </NextIntlClientProvider>
+        </MantineProvider>
       </body>
     </html>
   );

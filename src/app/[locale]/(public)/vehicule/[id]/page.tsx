@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 
+const TEAL = "#4FAAA3";
+const TEAL_DARK = "#215F5A";
+
 type Props = {
   params: Promise<{ id: string; locale: string }>;
 };
@@ -63,33 +66,103 @@ export default async function VehiclePage({ params }: Props) {
     `Bonjour, je suis intéressé par ${vehicle.title} (${vehicle.brand} ${vehicle.model} ${vehicle.year}) publié sur Laukars.`
   );
 
+  const specs = [
+    { icon: Calendar, label: t("vehicle.year"), value: String(vehicle.year) },
+    {
+      icon: Gauge,
+      label: t("vehicle.mileage"),
+      value: `${vehicle.mileage.toLocaleString()} ${t("vehicle.km")}`,
+    },
+    {
+      icon: Fuel,
+      label: t("vehicle.fuel"),
+      value: t(`vehicle.${vehicle.fuel.toLowerCase()}`),
+    },
+    {
+      icon: Cog,
+      label: t("vehicle.transmission"),
+      value: t(`vehicle.${vehicle.transmission.toLowerCase()}`),
+    },
+    { icon: MapPin, label: t("vehicle.city"), value: vehicle.city },
+  ];
+
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Gallery + Details */}
-          <div className="lg:col-span-2 space-y-6">
+    <div style={{ background: "#f6fafa", minHeight: "100vh" }}>
+      <div
+        style={{
+          maxWidth: 1280,
+          margin: "0 auto",
+          padding: "32px 24px 64px",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: 32,
+          }}
+          className="vehicle-detail-grid"
+        >
+          {/* ── Left Column: Gallery + Details ── */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+              gridColumn: "1 / 3",
+            }}
+            className="vehicle-detail-left"
+          >
             {/* Gallery */}
             <VehicleGallery photos={vehicle.photos} title={vehicle.title} />
 
-            {/* Details */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between flex-wrap gap-4">
+            {/* Details card */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 16,
+                padding: 28,
+                border: "1px solid #e8eeee",
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 16,
+                }}
+              >
                 <div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isRent
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {isRent
-                        ? t("catalogue.typeRent")
-                        : t("catalogue.typeSale")}
-                    </span>
-                  </div>
-                  <h1 className="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl">
+                  <span
+                    style={{
+                      display: "inline-block",
+                      padding: "6px 14px",
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      background: isRent ? "#e6f7f5" : "#e8f0fe",
+                      color: isRent ? TEAL_DARK : "#1a3a6b",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {isRent
+                      ? t("catalogue.typeRent")
+                      : t("catalogue.typeSale")}
+                  </span>
+                  <h1
+                    style={{
+                      marginTop: 14,
+                      fontSize: 28,
+                      fontWeight: 800,
+                      color: "#1a2332",
+                      fontFamily: '"Inter Tight", system-ui, sans-serif',
+                      lineHeight: 1.2,
+                    }}
+                  >
                     {vehicle.title}
                   </h1>
                 </div>
@@ -97,42 +170,50 @@ export default async function VehiclePage({ params }: Props) {
               </div>
 
               {/* Specs Grid */}
-              <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {[
-                  {
-                    icon: Calendar,
-                    label: t("vehicle.year"),
-                    value: vehicle.year,
-                  },
-                  {
-                    icon: Gauge,
-                    label: t("vehicle.mileage"),
-                    value: `${vehicle.mileage.toLocaleString()} ${t("vehicle.km")}`,
-                  },
-                  {
-                    icon: Fuel,
-                    label: t("vehicle.fuel"),
-                    value: t(`vehicle.${vehicle.fuel.toLowerCase()}`),
-                  },
-                  {
-                    icon: Cog,
-                    label: t("vehicle.transmission"),
-                    value: t(`vehicle.${vehicle.transmission.toLowerCase()}`),
-                  },
-                  {
-                    icon: MapPin,
-                    label: t("vehicle.city"),
-                    value: vehicle.city,
-                  },
-                ].map((spec) => (
+              <div
+                style={{
+                  marginTop: 32,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                {specs.map((spec) => (
                   <div
                     key={spec.label}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      padding: 14,
+                      borderRadius: 12,
+                      background: "#f6fafa",
+                    }}
                   >
-                    <spec.icon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <spec.icon
+                      size={20}
+                      style={{ color: TEAL, flexShrink: 0 }}
+                    />
                     <div>
-                      <p className="text-xs text-gray-500">{spec.label}</p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: "#999",
+                          margin: 0,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        {spec.label}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#1a2332",
+                          margin: 0,
+                        }}
+                      >
                         {spec.value}
                       </p>
                     </div>
@@ -142,11 +223,27 @@ export default async function VehiclePage({ params }: Props) {
 
               {/* Description */}
               {vehicle.description && (
-                <div className="mt-8">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                <div style={{ marginTop: 32 }}>
+                  <h2
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: "#1a2332",
+                      margin: "0 0 14px",
+                      fontFamily: '"Inter Tight", system-ui, sans-serif',
+                    }}
+                  >
                     {t("vehicle.description")}
                   </h2>
-                  <p className="mt-3 text-gray-600 leading-relaxed whitespace-pre-line">
+                  <p
+                    style={{
+                      fontSize: 15,
+                      color: "#5a6a7e",
+                      lineHeight: 1.7,
+                      whiteSpace: "pre-line",
+                      margin: 0,
+                    }}
+                  >
                     {vehicle.description}
                   </p>
                 </div>
@@ -154,54 +251,169 @@ export default async function VehiclePage({ params }: Props) {
 
               {/* Rental Policy */}
               {isRent && vehicle.rentalPolicy && (
-                <div className="mt-8 p-5 bg-green-50 rounded-xl border border-green-100">
-                  <h2 className="text-lg font-semibold text-green-900">
+                <div
+                  style={{
+                    marginTop: 32,
+                    padding: 24,
+                    background: "#e6f7f5",
+                    borderRadius: 14,
+                    border: `1px solid ${TEAL}33`,
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: TEAL_DARK,
+                      margin: "0 0 16px",
+                      fontFamily: '"Inter Tight", system-ui, sans-serif',
+                    }}
+                  >
                     {t("vehicle.rentalPolicy")}
                   </h2>
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(160px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
                     {vehicle.rentalPolicy.pricePerDay && (
                       <div>
-                        <p className="text-xs text-green-600">{t("vehicle.pricePerDay")}</p>
-                        <p className="text-lg font-bold text-green-800">
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: TEAL,
+                            margin: "0 0 4px",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {t("vehicle.pricePerDay")}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 800,
+                            color: TEAL_DARK,
+                            margin: 0,
+                          }}
+                        >
                           {formatPrice(vehicle.rentalPolicy.pricePerDay)}
                         </p>
                       </div>
                     )}
                     {vehicle.rentalPolicy.pricePerWeek && (
                       <div>
-                        <p className="text-xs text-green-600">{t("vehicle.pricePerWeek")}</p>
-                        <p className="text-lg font-bold text-green-800">
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: TEAL,
+                            margin: "0 0 4px",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {t("vehicle.pricePerWeek")}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 800,
+                            color: TEAL_DARK,
+                            margin: 0,
+                          }}
+                        >
                           {formatPrice(vehicle.rentalPolicy.pricePerWeek)}
                         </p>
                       </div>
                     )}
                     {vehicle.rentalPolicy.pricePerMonth && (
                       <div>
-                        <p className="text-xs text-green-600">{t("vehicle.pricePerMonth")}</p>
-                        <p className="text-lg font-bold text-green-800">
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: TEAL,
+                            margin: "0 0 4px",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {t("vehicle.pricePerMonth")}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 800,
+                            color: TEAL_DARK,
+                            margin: 0,
+                          }}
+                        >
                           {formatPrice(vehicle.rentalPolicy.pricePerMonth)}
                         </p>
                       </div>
                     )}
                     {vehicle.rentalPolicy.deposit && (
                       <div>
-                        <p className="text-xs text-green-600">{t("vehicle.depositAmount")}</p>
-                        <p className="text-lg font-bold text-green-800">
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: TEAL,
+                            margin: "0 0 4px",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {t("vehicle.depositAmount")}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 800,
+                            color: TEAL_DARK,
+                            margin: 0,
+                          }}
+                        >
                           {formatPrice(vehicle.rentalPolicy.deposit)}
                         </p>
                       </div>
                     )}
                     {vehicle.rentalPolicy.kmIncluded && (
                       <div>
-                        <p className="text-xs text-green-600">{t("vehicle.kmIncluded")}</p>
-                        <p className="text-lg font-bold text-green-800">
+                        <p
+                          style={{
+                            fontSize: 11,
+                            color: TEAL,
+                            margin: "0 0 4px",
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                          }}
+                        >
+                          {t("vehicle.kmIncluded")}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: 20,
+                            fontWeight: 800,
+                            color: TEAL_DARK,
+                            margin: 0,
+                          }}
+                        >
                           {vehicle.rentalPolicy.kmIncluded} km
                         </p>
                       </div>
                     )}
                   </div>
                   {vehicle.rentalPolicy.conditions && (
-                    <p className="mt-4 text-sm text-green-700">
+                    <p
+                      style={{
+                        marginTop: 16,
+                        fontSize: 13,
+                        color: TEAL_DARK,
+                        lineHeight: 1.5,
+                      }}
+                    >
                       {vehicle.rentalPolicy.conditions}
                     </p>
                   )}
@@ -210,27 +422,89 @@ export default async function VehiclePage({ params }: Props) {
             </div>
           </div>
 
-          {/* Right Column - Price + CTA + Form */}
-          <div className="space-y-6">
+          {/* ── Right Column: Price + Form ── */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+            }}
+            className="vehicle-detail-right"
+          >
             {/* Price Card */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 sticky top-20">
-              <div className="mb-6">
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 16,
+                padding: 28,
+                border: "1px solid #e8eeee",
+                position: "sticky",
+                top: 90,
+              }}
+            >
+              {/* Price */}
+              <div style={{ marginBottom: 24 }}>
                 {isRent ? (
                   <div>
-                    <p className="text-sm text-gray-500">{t("vehicle.pricePerDay")}</p>
-                    <p className="text-3xl font-bold text-green-700">
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "#7a8a9e",
+                        margin: "0 0 6px",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {t("vehicle.pricePerDay")}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 800,
+                        color: TEAL_DARK,
+                        margin: 0,
+                        fontFamily: '"Inter Tight", system-ui, sans-serif',
+                        lineHeight: 1,
+                      }}
+                    >
                       {formatPrice(
-                        vehicle.rentalPolicy?.pricePerDay || vehicle.pricePublic
+                        vehicle.rentalPolicy?.pricePerDay ||
+                          vehicle.pricePublic
                       )}
-                      <span className="text-base font-normal text-gray-500">
+                      <span
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 400,
+                          color: "#7a8a9e",
+                          marginLeft: 4,
+                        }}
+                      >
                         {t("catalogue.perDay")}
                       </span>
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-sm text-gray-500">{t("vehicle.price")}</p>
-                    <p className="text-3xl font-bold text-blue-900">
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "#7a8a9e",
+                        margin: "0 0 6px",
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                      }}
+                    >
+                      {t("vehicle.price")}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 800,
+                        color: TEAL_DARK,
+                        margin: 0,
+                        fontFamily: '"Inter Tight", system-ui, sans-serif',
+                      }}
+                    >
                       {formatPrice(vehicle.pricePublic)}
                     </p>
                   </div>
@@ -238,17 +512,53 @@ export default async function VehiclePage({ params }: Props) {
               </div>
 
               {/* Code Advantage */}
-              <div className="mb-6 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                <div className="flex items-center gap-2">
-                  <Ticket className="h-5 w-5 text-amber-600" />
-                  <span className="font-semibold text-amber-800 text-sm">
+              <div
+                style={{
+                  marginBottom: 24,
+                  padding: 16,
+                  background: "#fff8e1",
+                  borderRadius: 12,
+                  border: "1px solid #ffe082",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <Ticket size={18} color="#f59e0b" />
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      color: "#92400e",
+                      fontSize: 13,
+                    }}
+                  >
                     {t("vehicle.codeAdvantage")}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-amber-700">
+                <p
+                  style={{
+                    marginTop: 6,
+                    fontSize: 12,
+                    color: "#a16207",
+                    lineHeight: 1.4,
+                  }}
+                >
                   {t("vehicle.codeAdvantageDesc")}
                 </p>
               </div>
+
+              {/* Separator */}
+              <div
+                style={{
+                  height: 1,
+                  background: "#e8eeee",
+                  margin: "0 0 24px",
+                }}
+              />
 
               {/* Lead Form */}
               <LeadRequestForm
@@ -261,15 +571,57 @@ export default async function VehiclePage({ params }: Props) {
                 href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
+                style={{
+                  marginTop: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  width: "100%",
+                  padding: "14px 0",
+                  borderRadius: 12,
+                  background: "#25d366",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  textDecoration: "none",
+                  transition: "background 0.2s ease",
+                  fontFamily: '"Inter Tight", system-ui, sans-serif',
+                }}
               >
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle size={18} />
                 {t("vehicle.contactWhatsapp")}
               </a>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Responsive grid */}
+      <style>{`
+        .vehicle-detail-grid {
+          display: grid !important;
+          grid-template-columns: 1fr 380px !important;
+          gap: 32px !important;
+        }
+        .vehicle-detail-left {
+          grid-column: 1 / 2 !important;
+        }
+        .vehicle-detail-right {
+          grid-column: 2 / 3 !important;
+        }
+        @media (max-width: 1024px) {
+          .vehicle-detail-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .vehicle-detail-left {
+            grid-column: 1 !important;
+          }
+          .vehicle-detail-right {
+            grid-column: 1 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

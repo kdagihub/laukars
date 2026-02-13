@@ -5,6 +5,8 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { VehiclePhoto } from "@prisma/client";
 
+const TEAL = "#4FAAA3";
+
 type Props = {
   photos: VehiclePhoto[];
   title: string;
@@ -15,21 +17,40 @@ export function VehicleGallery({ photos, title }: Props) {
 
   if (photos.length === 0) {
     return (
-      <div className="bg-gray-200 rounded-2xl aspect-[16/9] flex items-center justify-center text-gray-400">
+      <div
+        style={{
+          background: "#f4f8f8",
+          borderRadius: 16,
+          aspectRatio: "16 / 9",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#aaa",
+          fontSize: 15,
+        }}
+      >
         Pas de photo disponible
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {/* Main Image */}
-      <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100">
+      <div
+        style={{
+          position: "relative",
+          aspectRatio: "16 / 9",
+          borderRadius: 16,
+          overflow: "hidden",
+          background: "#f4f8f8",
+        }}
+      >
         <Image
           src={photos[current].url}
           alt={`${title} - Photo ${current + 1}`}
           fill
-          className="object-cover"
+          style={{ objectFit: "cover" }}
           sizes="(max-width: 1024px) 100vw, 66vw"
           priority
         />
@@ -37,21 +58,70 @@ export function VehicleGallery({ photos, title }: Props) {
           <>
             <button
               onClick={() =>
-                setCurrent((prev) => (prev === 0 ? photos.length - 1 : prev - 1))
+                setCurrent((prev) =>
+                  prev === 0 ? photos.length - 1 : prev - 1
+                )
               }
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-lg"
+              style={{
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.85)",
+                backdropFilter: "blur(4px)",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                transition: "background 0.2s ease",
+              }}
             >
-              <ChevronLeft className="h-5 w-5 text-gray-800" />
+              <ChevronLeft size={20} color="#1a2332" />
             </button>
             <button
               onClick={() =>
-                setCurrent((prev) => (prev === photos.length - 1 ? 0 : prev + 1))
+                setCurrent((prev) =>
+                  prev === photos.length - 1 ? 0 : prev + 1
+                )
               }
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-lg"
+              style={{
+                position: "absolute",
+                right: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,0.85)",
+                backdropFilter: "blur(4px)",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                transition: "background 0.2s ease",
+              }}
             >
-              <ChevronRight className="h-5 w-5 text-gray-800" />
+              <ChevronRight size={20} color="#1a2332" />
             </button>
-            <div className="absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
+            <div
+              style={{
+                position: "absolute",
+                bottom: 12,
+                right: 12,
+                background: "rgba(0,0,0,0.5)",
+                color: "#fff",
+                fontSize: 12,
+                padding: "4px 10px",
+                borderRadius: 20,
+              }}
+            >
               {current + 1} / {photos.length}
             </div>
           </>
@@ -60,20 +130,37 @@ export function VehicleGallery({ photos, title }: Props) {
 
       {/* Thumbnails */}
       {photos.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            paddingBottom: 4,
+          }}
+        >
           {photos.map((photo, idx) => (
             <button
               key={photo.id}
               onClick={() => setCurrent(idx)}
-              className={`relative w-20 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${
-                idx === current ? "border-blue-600" : "border-transparent"
-              }`}
+              style={{
+                position: "relative",
+                width: 80,
+                height: 64,
+                borderRadius: 10,
+                overflow: "hidden",
+                flexShrink: 0,
+                border: `2px solid ${idx === current ? TEAL : "transparent"}`,
+                padding: 0,
+                background: "none",
+                cursor: "pointer",
+                transition: "border-color 0.2s ease",
+              }}
             >
               <Image
                 src={photo.url}
                 alt={`${title} - Miniature ${idx + 1}`}
                 fill
-                className="object-cover"
+                style={{ objectFit: "cover" }}
                 sizes="80px"
               />
             </button>
