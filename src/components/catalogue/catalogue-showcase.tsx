@@ -1,29 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import Image from "next/image";
-import { Box, Text, Group, Button, UnstyledButton, Badge } from "@mantine/core";
 import {
-  Calendar,
-  Gauge,
-  Fuel,
-  Cog,
-  MapPin,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  MessageCircle,
-} from "lucide-react";
+  Box,
+  Text,
+  Group,
+  UnstyledButton,
+  Badge,
+} from "@mantine/core";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import type { Vehicle, VehiclePhoto, RentalPolicy } from "@prisma/client";
 
 const TEAL = "#4FAAA3";
 const TEAL_DARK = "#215F5A";
-const BG_DARK = "#0c1220";
-const BG_CARD = "rgba(255,255,255,0.04)";
-const GLASS = "rgba(12,18,32,0.75)";
+const PAGE_SIZE = 12;
 
 type VehicleWithRelations = Vehicle & {
   photos: VehiclePhoto[];
@@ -40,899 +34,525 @@ export function CatalogueShowcase({ vehicles, brands }: Props) {
   const t = useTranslations();
   const [activeType, setActiveType] = useState<"all" | "SALE" | "RENT">("all");
   const [activeBrand, setActiveBrand] = useState("all");
-  const [selectedIdx, setSelectedIdx] = useState(0);
-  const [fadeIn, setFadeIn] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0);
 
-  // Filter vehicles
+  const ignitionAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playIgnitionSound = useCallback(() => {
+    try {
+      if (!ignitionAudioRef.current) {
+        ignitionAudioRef.current = new Audio("/sounds/car-ignition-fail.mp3");
+        ignitionAudioRef.current.volume = 0.5;
+      }
+      ignitionAudioRef.current.currentTime = 0;
+      ignitionAudioRef.current.play().catch(() => {});
+    } catch {
+      // Silently ignore audio errors
+    }
+  }, []);
+
   const filtered = vehicles.filter((v) => {
     if (activeType !== "all" && v.type !== activeType) return false;
     if (activeBrand !== "all" && v.brand !== activeBrand) return false;
     return true;
   });
 
-  const selected = filtered[selectedIdx] || filtered[0];
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Reset selection on filter change
-  useEffect(() => {
-    setSelectedIdx(0);
-    setFadeIn(true);
-  }, [activeType, activeBrand]);
-
-  const selectVehicle = useCallback(
-    (idx: number) => {
-      if (idx === selectedIdx) return;
-      setFadeIn(false);
-      setTimeout(() => {
-        setSelectedIdx(idx);
-        setFadeIn(true);
-      }, 250);
-    },
-    [selectedIdx]
-  );
-
-  const scrollThumbs = (dir: "left" | "right") => {
-    scrollRef.current?.scrollBy({
-      left: dir === "left" ? -340 : 340,
-      behavior: "smooth",
+  const goPage = (dir: "prev" | "next") => {
+    setPage((p) => {
+      if (dir === "prev") return Math.max(0, p - 1);
+      return Math.min(totalPages - 1, p + 1);
     });
   };
 
-  // Scroll active thumb into view
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-    const activeThumb = container.children[selectedIdx] as HTMLElement;
-    if (activeThumb) {
-      activeThumb.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  }, [selectedIdx]);
-
-  const photo = selected?.photos[0];
-  const isRent = selected?.type === "RENT";
-  const hasActiveLeads =
-    selected?.leadRequests && selected.leadRequests.length > 0;
-
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "237600000000";
-  const whatsappMsg = selected
-    ? encodeURIComponent(
-        `Bonjour, je suis intéressé par ${selected.title} (${selected.brand} ${selected.model} ${selected.year}) sur Laukars.`
-      )
-    : "";
+  const resetFilters = () => {
+    setActiveType("all");
+    setActiveBrand("all");
+    setPage(0);
+  };
 
   return (
-    <Box
-      style={{
-        minHeight: "100vh",
-        background: `linear-gradient(135deg, ${BG_DARK} 0%, #111b2e 50%, #0e1a28 100%)`,
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Ambient teal glow */}
+    <Box style={{ minHeight: "100vh", background: "#f6fafa" }}>
       <Box
         style={{
-          position: "absolute",
-          top: "-20%",
-          right: "-10%",
-          width: "60%",
-          height: "60%",
-          background: `radial-gradient(ellipse, ${TEAL}15 0%, transparent 70%)`,
-          pointerEvents: "none",
-        }}
-      />
-      <Box
-        style={{
-          position: "absolute",
-          bottom: "-10%",
-          left: "-5%",
-          width: "40%",
-          height: "40%",
-          background: `radial-gradient(ellipse, ${TEAL}0a 0%, transparent 70%)`,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* ── HEADER: Title + Filters ── */}
-      <Box
-        style={{
-        maxWidth: 1400,
-        margin: "0 auto",
-        padding: "100px 32px 0",
-        position: "relative",
-        zIndex: 2,
+          maxWidth: 1320,
+          margin: "0 auto",
+          padding: "100px 32px 64px",
         }}
       >
-        {/* Title */}
-        <Group justify="space-between" align="flex-end" mb={28}>
-          <Box>
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: TEAL,
-                letterSpacing: 3,
-                textTransform: "uppercase",
-                marginBottom: 6,
-              }}
-            >
-              {t("common.appName")}
-            </Text>
-            <Text
-              style={{
-                fontSize: "clamp(28px, 4vw, 42px)",
-                fontWeight: 900,
-                color: "#FFFFFF",
-                fontFamily: '"Inter Tight", system-ui, sans-serif',
-                letterSpacing: -1,
-                lineHeight: 1,
-              }}
-            >
-              CATALOGUE
-            </Text>
-          </Box>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "rgba(255,255,255,0.4)",
-              fontWeight: 500,
-            }}
-          >
-            {filtered.length} {t("catalogue.vehicleCount", { count: filtered.length })}
-          </Text>
-        </Group>
+        {/* ── Title ── */}
+        <Text
+          style={{
+            fontSize: "clamp(28px, 4vw, 42px)",
+            fontWeight: 900,
+            color: "#1a2332",
+            fontFamily: '"Inter Tight", system-ui, sans-serif',
+            letterSpacing: -1,
+            lineHeight: 1,
+            marginBottom: 28,
+          }}
+        >
+          CATALOGUE
+        </Text>
 
-        {/* Type tabs + Brand tabs */}
+        {/* ── Filters ── */}
         <Box
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: 14,
+            flexWrap: "wrap",
+            gap: 10,
+            marginBottom: 36,
           }}
         >
-          {/* Type tabs */}
-          <Group gap={8}>
-            {(
-              [
-                { key: "all", label: t("catalogue.allTypes") },
-                { key: "SALE", label: t("catalogue.typeSale") },
-                { key: "RENT", label: t("catalogue.typeRent") },
-              ] as const
-            ).map((tab) => (
-              <UnstyledButton
-                key={tab.key}
-                onClick={() => setActiveType(tab.key)}
-                style={{
-                  padding: "8px 20px",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  letterSpacing: 0.5,
-                  transition: "all 0.25s ease",
-                  ...(activeType === tab.key
-                    ? {
-                        background: TEAL,
-                        color: "#FFFFFF",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.06)",
-                        color: "rgba(255,255,255,0.5)",
-                      }),
-                }}
-              >
-                {tab.label}
-              </UnstyledButton>
-            ))}
-          </Group>
-
-          {/* Brand tabs (horizontal scroll) */}
-          <Box
-            style={{
-              display: "flex",
-              gap: 6,
-              overflowX: "auto",
-              paddingBottom: 4,
-              scrollbarWidth: "none",
-            }}
-            className="hide-scrollbar"
-          >
+          {(
+            [
+              { key: "all", label: t("catalogue.allTypes") },
+              { key: "SALE", label: t("catalogue.typeSale") },
+              { key: "RENT", label: t("catalogue.typeRent") },
+            ] as const
+          ).map((tab) => (
             <UnstyledButton
-              onClick={() => setActiveBrand("all")}
+              key={tab.key}
+              onClick={() => {
+                setActiveType(tab.key);
+                setPage(0);
+              }}
               style={{
-                padding: "6px 16px",
-                borderRadius: 6,
-                fontSize: 12,
+                padding: "9px 22px",
+                borderRadius: 8,
+                fontSize: 14,
                 fontWeight: 600,
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-                transition: "all 0.25s ease",
-                ...(activeBrand === "all"
+                fontFamily: '"Inter Tight", system-ui, sans-serif',
+                transition: "all 0.2s ease",
+                ...(activeType === tab.key
                   ? {
-                      background: "rgba(255,255,255,0.12)",
-                      color: TEAL,
-                      border: `1px solid ${TEAL}40`,
+                      background: TEAL_DARK,
+                      color: "#FFFFFF",
+                      border: `1.5px solid ${TEAL_DARK}`,
                     }
                   : {
-                      background: "transparent",
-                      color: "rgba(255,255,255,0.35)",
-                      border: "1px solid transparent",
+                      background: "#FFFFFF",
+                      color: "#5a6a7e",
+                      border: "1.5px solid #d4dede",
                     }),
               }}
             >
-              {t("catalogue.allBrands")}
+              {tab.label}
             </UnstyledButton>
-            {brands.map((brand) => (
-              <UnstyledButton
-                key={brand}
-                onClick={() => setActiveBrand(brand)}
-                style={{
-                  padding: "6px 16px",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  transition: "all 0.25s ease",
-                  ...(activeBrand === brand
-                    ? {
-                        background: "rgba(255,255,255,0.12)",
-                        color: TEAL,
-                        border: `1px solid ${TEAL}40`,
-                      }
-                    : {
-                        background: "transparent",
-                        color: "rgba(255,255,255,0.35)",
-                        border: "1px solid transparent",
-                      }),
-                }}
-              >
-                {brand}
-              </UnstyledButton>
-            ))}
-          </Box>
-        </Box>
-      </Box>
+          ))}
 
-      {/* ── MAIN SHOWCASE ── */}
-      {selected ? (
-        <Box
+          <Box
+            style={{
+              height: 20,
+              width: 1,
+              background: "#d4dede",
+              alignSelf: "center",
+              margin: "0 4px",
+            }}
+            className="filter-divider"
+          />
+
+          <UnstyledButton
+            onClick={() => {
+              setActiveBrand("all");
+              setPage(0);
+            }}
+            style={{
+              padding: "9px 22px",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 600,
+              fontFamily: '"Inter Tight", system-ui, sans-serif',
+              transition: "all 0.2s ease",
+              ...(activeBrand === "all"
+                ? {
+                    background: TEAL_DARK,
+                    color: "#FFFFFF",
+                    border: `1.5px solid ${TEAL_DARK}`,
+                  }
+                : {
+                    background: "#FFFFFF",
+                    color: "#5a6a7e",
+                    border: "1.5px solid #d4dede",
+                  }),
+            }}
+          >
+            {t("catalogue.allBrands")}
+          </UnstyledButton>
+
+          {brands.map((brand) => (
+            <UnstyledButton
+              key={brand}
+              onClick={() => {
+                setActiveBrand(brand);
+                setPage(0);
+              }}
+              style={{
+                padding: "9px 22px",
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 600,
+                fontFamily: '"Inter Tight", system-ui, sans-serif',
+                transition: "all 0.2s ease",
+                ...(activeBrand === brand
+                  ? {
+                      background: TEAL_DARK,
+                      color: "#FFFFFF",
+                      border: `1.5px solid ${TEAL_DARK}`,
+                    }
+                  : {
+                      background: "#FFFFFF",
+                      color: "#5a6a7e",
+                      border: "1.5px solid #d4dede",
+                    }),
+              }}
+            >
+              {brand}
+            </UnstyledButton>
+          ))}
+        </Box>
+
+        {/* ── Vehicle count ── */}
+        <Text
           style={{
-            maxWidth: 1400,
-            margin: "0 auto",
-            padding: "32px 32px 0",
-            position: "relative",
-            zIndex: 2,
+            fontSize: 14,
+            color: "#7a8a9e",
+            fontWeight: 500,
+            marginBottom: 20,
+            fontFamily: '"Inter Tight", system-ui, sans-serif',
           }}
         >
-          <Box
-            className="showcase-main"
-            style={{
-              display: "flex",
-              gap: 0,
-              minHeight: 420,
-              position: "relative",
-            }}
-          >
-            {/* ── Left: Specs Panel (Glass) ── */}
-            <Box
-              className="specs-panel"
-              style={{
-                width: 340,
-                flexShrink: 0,
-                background: GLASS,
-                backdropFilter: "blur(24px)",
-                WebkitBackdropFilter: "blur(24px)",
-                borderRadius: "16px 0 0 16px",
-                padding: "28px 24px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRight: "none",
-                zIndex: 3,
-                opacity: fadeIn ? 1 : 0,
-                transform: fadeIn ? "translateX(0)" : "translateX(-20px)",
-                transition: "opacity 0.35s ease, transform 0.35s ease",
-              }}
-            >
-              <Box>
-                {/* Badges */}
-                <Group gap={8} mb={16}>
-                  <Badge
-                    size="md"
-                    radius="sm"
-                    style={{
-                      background: isRent
-                        ? `${TEAL}30`
-                        : "rgba(79,130,255,0.2)",
-                      color: isRent ? TEAL : "#7aa2ff",
-                      border: "none",
-                      fontWeight: 700,
-                      fontSize: 10,
-                      letterSpacing: 1,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {isRent
-                      ? t("catalogue.typeRent")
-                      : t("catalogue.typeSale")}
-                  </Badge>
-                  {hasActiveLeads && (
-                    <Badge
-                      size="md"
-                      radius="sm"
-                      style={{
-                        background: "rgba(255,160,0,0.2)",
-                        color: "#ffb74d",
-                        border: "none",
-                        fontWeight: 700,
-                        fontSize: 10,
-                        letterSpacing: 0.5,
-                      }}
-                    >
-                      {t("catalogue.negotiating")}
-                    </Badge>
-                  )}
-                </Group>
+          {filtered.length}{" "}
+          {t("catalogue.vehicleCount", { count: filtered.length })}
+        </Text>
 
-                {/* Title */}
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 900,
-                    color: "#FFFFFF",
-                    fontFamily: '"Inter Tight", system-ui, sans-serif',
-                    lineHeight: 1.15,
-                    marginBottom: 4,
-                  }}
-                >
-                  {selected.title}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: "rgba(255,255,255,0.35)",
-                    fontWeight: 500,
-                    marginBottom: 20,
-                  }}
-                >
-                  {selected.brand} &middot; {selected.model}
-                </Text>
-
-                {/* Separator */}
-                <Box
-                  style={{
-                    height: 1,
-                    background:
-                      "linear-gradient(90deg, rgba(255,255,255,0.08), transparent)",
-                    marginBottom: 18,
-                  }}
-                />
-
-                {/* Specs */}
-                <Box
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 12,
-                  }}
-                >
-                  {[
-                    {
-                      icon: Calendar,
-                      label: t("vehicle.year"),
-                      value: String(selected.year),
-                    },
-                    {
-                      icon: Gauge,
-                      label: t("vehicle.mileage"),
-                      value: `${selected.mileage.toLocaleString()} km`,
-                    },
-                    {
-                      icon: Fuel,
-                      label: t("vehicle.fuel"),
-                      value: t(
-                        `vehicle.${selected.fuel.toLowerCase()}`
-                      ),
-                    },
-                    {
-                      icon: Cog,
-                      label: t("vehicle.transmission"),
-                      value: t(
-                        `vehicle.${selected.transmission.toLowerCase()}`
-                      ),
-                    },
-                    {
-                      icon: MapPin,
-                      label: t("vehicle.city"),
-                      value: selected.city,
-                    },
-                  ].map((spec) => (
-                    <Group key={spec.label} gap={12} wrap="nowrap">
-                      <Box
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: 8,
-                          background: "rgba(255,255,255,0.05)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <spec.icon size={15} style={{ color: TEAL }} />
-                      </Box>
-                      <Box>
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            color: "rgba(255,255,255,0.3)",
-                            textTransform: "uppercase",
-                            letterSpacing: 1,
-                            lineHeight: 1,
-                          }}
-                        >
-                          {spec.label}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: "#FFFFFF",
-                            lineHeight: 1.3,
-                          }}
-                        >
-                          {spec.value}
-                        </Text>
-                      </Box>
-                    </Group>
-                  ))}
-                </Box>
-
-                {/* Separator */}
-                <Box
-                  style={{
-                    height: 1,
-                    background:
-                      "linear-gradient(90deg, rgba(255,255,255,0.08), transparent)",
-                    margin: "18px 0",
-                  }}
-                />
-
-                {/* Price */}
-                <Box>
-                  <Text
-                    style={{
-                      fontSize: 10,
-                      color: "rgba(255,255,255,0.3)",
-                      textTransform: "uppercase",
-                      letterSpacing: 1,
-                      marginBottom: 4,
-                    }}
-                  >
-                    {t("vehicle.price")}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 26,
-                      fontWeight: 900,
-                      color: TEAL,
-                      fontFamily: '"Inter Tight", system-ui, sans-serif',
-                      lineHeight: 1,
-                    }}
-                  >
-                    {isRent && selected.rentalPolicy?.pricePerDay
-                      ? formatPrice(selected.rentalPolicy.pricePerDay)
-                      : formatPrice(selected.pricePublic)}
-                    {isRent && (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 400,
-                          color: "rgba(255,255,255,0.35)",
-                          marginLeft: 4,
-                        }}
-                      >
-                        {t("catalogue.perDay")}
-                      </span>
-                    )}
-                  </Text>
-                </Box>
-              </Box>
-
-              {/* Buttons */}
-              <Box
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  marginTop: 20,
-                }}
-              >
-                <Button
-                  component={Link}
-                  href={`/vehicule/${selected.id}`}
-                  radius="md"
-                  size="md"
-                  rightSection={<ArrowRight size={16} />}
-                  style={{
-                    background: TEAL,
-                    color: "#FFFFFF",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    height: 44,
-                    border: "none",
-                    fontFamily: '"Inter Tight", system-ui, sans-serif',
-                  }}
-                >
-                  {t("catalogue.viewVehicle")}
-                </Button>
-                <Button
-                  component="a"
-                  href={`https://wa.me/${whatsappNumber}?text=${whatsappMsg}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  radius="md"
-                  size="md"
-                  leftSection={<MessageCircle size={16} />}
-                  style={{
-                    background: "rgba(37,211,102,0.15)",
-                    color: "#25d366",
-                    fontWeight: 600,
-                    fontSize: 13,
-                    height: 40,
-                    border: "1px solid rgba(37,211,102,0.2)",
-                    fontFamily: '"Inter Tight", system-ui, sans-serif',
-                  }}
-                >
-                  WhatsApp
-                </Button>
-              </Box>
-            </Box>
-
-            {/* ── Right: Large Vehicle Image ── */}
-            <Box
-              style={{
-                flex: 1,
-                position: "relative",
-                borderRadius: "0 16px 16px 0",
-                overflow: "hidden",
-                background: BG_CARD,
-                border: "1px solid rgba(255,255,255,0.04)",
-                borderLeft: "none",
-                minHeight: 420,
-              }}
-            >
-              {photo ? (
-                <Box
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    opacity: fadeIn ? 1 : 0,
-                    transform: fadeIn ? "scale(1)" : "scale(1.03)",
-                    transition:
-                      "opacity 0.4s ease, transform 0.5s ease",
-                  }}
-                >
-                  <Image
-                    src={photo.url}
-                    alt={selected.title}
-                    fill
-                    style={{ objectFit: "cover" }}
-                    sizes="(max-width: 768px) 100vw, 60vw"
-                    priority
-                  />
-                  {/* Gradient overlay for readability */}
-                  <Box
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(90deg, rgba(12,18,32,0.5) 0%, transparent 40%), linear-gradient(0deg, rgba(12,18,32,0.4) 0%, transparent 30%)",
-                    }}
-                  />
-                </Box>
-              ) : (
-                <Box
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "rgba(255,255,255,0.2)",
-                    fontSize: 15,
-                  }}
-                >
-                  Pas de photo
-                </Box>
-              )}
-
-              {/* Index badge */}
-              <Box
+        {/* ── Grid with side arrows ── */}
+        {paged.length > 0 ? (
+          <Box style={{ position: "relative" }}>
+            {page > 0 && (
+              <UnstyledButton
+                onClick={() => goPage("prev")}
+                className="grid-nav-btn"
                 style={{
                   position: "absolute",
-                  bottom: 16,
-                  right: 16,
-                  background: "rgba(0,0,0,0.5)",
-                  backdropFilter: "blur(8px)",
-                  padding: "6px 14px",
-                  borderRadius: 8,
-                  zIndex: 2,
+                  left: -20,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 5,
+                  border: "1px solid #d4dede",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                  transition: "all 0.2s",
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "rgba(255,255,255,0.6)",
-                  }}
-                >
-                  <span style={{ color: TEAL, fontSize: 14 }}>
-                    {selectedIdx + 1}
-                  </span>{" "}
-                  / {filtered.length}
-                </Text>
-              </Box>
-            </Box>
-          </Box>
+                <ChevronLeft size={22} color={TEAL_DARK} />
+              </UnstyledButton>
+            )}
 
-          {/* ── HORIZONTAL THUMBNAIL SCROLL ── */}
-          <Box
-            style={{
-              position: "relative",
-              marginTop: 24,
-              paddingBottom: 32,
-            }}
-          >
-            {/* Nav arrows */}
-            <UnstyledButton
-              onClick={() => scrollThumbs("left")}
-              className="thumb-nav-btn"
-              style={{
-                position: "absolute",
-                left: -4,
-                top: "50%",
-                transform: "translateY(-70%)",
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(8px)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 5,
-                border: "1px solid rgba(255,255,255,0.06)",
-                transition: "background 0.2s",
-              }}
-            >
-              <ChevronLeft size={20} color="rgba(255,255,255,0.6)" />
-            </UnstyledButton>
-            <UnstyledButton
-              onClick={() => scrollThumbs("right")}
-              className="thumb-nav-btn"
-              style={{
-                position: "absolute",
-                right: -4,
-                top: "50%",
-                transform: "translateY(-70%)",
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.08)",
-                backdropFilter: "blur(8px)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 5,
-                border: "1px solid rgba(255,255,255,0.06)",
-                transition: "background 0.2s",
-              }}
-            >
-              <ChevronRight size={20} color="rgba(255,255,255,0.6)" />
-            </UnstyledButton>
+            {page < totalPages - 1 && (
+              <UnstyledButton
+                onClick={() => goPage("next")}
+                className="grid-nav-btn"
+                style={{
+                  position: "absolute",
+                  right: -20,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 5,
+                  border: "1px solid #d4dede",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                  transition: "all 0.2s",
+                }}
+              >
+                <ChevronRight size={22} color={TEAL_DARK} />
+              </UnstyledButton>
+            )}
 
-            {/* Scrollable thumbnails */}
             <Box
-              ref={scrollRef}
+              className="catalogue-grid"
               style={{
-                display: "flex",
-                gap: 14,
-                overflowX: "auto",
-                scrollSnapType: "x mandatory",
-                padding: "4px 48px",
-                scrollbarWidth: "none",
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 20,
               }}
-              className="hide-scrollbar"
             >
-              {filtered.map((v, idx) => {
-                const thumb = v.photos[0];
-                const isActive = idx === selectedIdx;
+              {paged.map((v) => {
+                const photo = v.photos[0];
+                const isRent = v.type === "RENT";
                 return (
-                  <UnstyledButton
+                  <Link
                     key={v.id}
-                    onClick={() => selectVehicle(idx)}
-                    style={{
-                      flexShrink: 0,
-                      width: 200,
-                      scrollSnapAlign: "center",
-                      borderRadius: 12,
-                      overflow: "hidden",
-                      position: "relative",
-                      border: isActive
-                        ? `2px solid ${TEAL}`
-                        : "2px solid rgba(255,255,255,0.06)",
-                      transition: "all 0.3s ease",
-                      boxShadow: isActive
-                        ? `0 0 20px ${TEAL}30`
-                        : "none",
-                      transform: isActive
-                        ? "scale(1.02)"
-                        : "scale(1)",
-                    }}
+                    href={`/vehicule/${v.id}`}
+                    style={{ textDecoration: "none" }}
+                    onClick={playIgnitionSound}
                   >
-                    {/* Image */}
                     <Box
+                      className="catalogue-card"
                       style={{
-                        position: "relative",
-                        width: 200,
-                        height: 130,
-                        background: "#111827",
+                        background: "#FFFFFF",
+                        borderRadius: 14,
+                        overflow: "hidden",
+                        border: "1.5px solid #e4ecec",
+                        transition: "all 0.3s ease",
+                        cursor: "pointer",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
                       }}
                     >
-                      {thumb ? (
-                        <Image
-                          src={thumb.url}
-                          alt={v.title}
-                          fill
-                          style={{ objectFit: "cover" }}
-                          sizes="200px"
-                        />
-                      ) : (
-                        <Box
+                      {/* Image */}
+                      <Box
+                        className="card-img"
+                        style={{
+                          position: "relative",
+                          aspectRatio: "4/3",
+                          overflow: "hidden",
+                          background: "#f0f5f5",
+                        }}
+                      >
+                        {photo ? (
+                          <Image
+                            src={photo.url}
+                            alt={v.title}
+                            fill
+                            style={{
+                              objectFit: "cover",
+                              transition: "transform 0.4s ease",
+                            }}
+                            sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1100px) 33vw, 25vw"
+                          />
+                        ) : (
+                          <Box
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              height: "100%",
+                              color: "#b0bec5",
+                              fontSize: 13,
+                            }}
+                          >
+                            Pas de photo
+                          </Box>
+                        )}
+
+                        <Badge
+                          size="sm"
+                          radius="sm"
                           style={{
-                            width: "100%",
-                            height: "100%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "rgba(255,255,255,0.15)",
-                            fontSize: 11,
+                            position: "absolute",
+                            top: 10,
+                            left: 10,
+                            background: isRent ? "#e6f7f5" : TEAL_DARK,
+                            color: isRent ? TEAL_DARK : "#FFFFFF",
+                            fontWeight: 700,
+                            fontSize: 10,
+                            letterSpacing: 0.8,
+                            textTransform: "uppercase",
+                            border: "none",
                           }}
                         >
-                          N/A
-                        </Box>
-                      )}
-                      {/* Overlay */}
+                          {isRent
+                            ? t("catalogue.typeRent")
+                            : t("catalogue.typeSale")}
+                        </Badge>
+                      </Box>
+
+                      {/* Content */}
                       <Box
                         style={{
-                          position: "absolute",
-                          inset: 0,
-                          background:
-                            "linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 60%)",
-                        }}
-                      />
-                      {/* Info overlay */}
-                      <Box
-                        style={{
-                          position: "absolute",
-                          bottom: 8,
-                          left: 10,
-                          right: 10,
+                          padding: "16px 16px 18px",
+                          flex: 1,
+                          display: "flex",
+                          flexDirection: "column",
                         }}
                       >
                         <Text
                           style={{
-                            fontSize: 12,
-                            fontWeight: 700,
-                            color: "#FFFFFF",
-                            lineHeight: 1.2,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            fontWeight: 800,
+                            fontSize: 15,
+                            color: "#1a2332",
+                            lineHeight: 1.25,
+                            fontFamily:
+                              '"Inter Tight", system-ui, sans-serif',
+                            textTransform: "uppercase",
                           }}
                         >
-                          {v.brand} {v.model}
+                          {v.title}
                         </Text>
                         <Text
                           style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: isActive ? TEAL : "rgba(255,255,255,0.5)",
+                            fontSize: 13,
+                            color: "#7a8a9e",
                             marginTop: 2,
+                            fontFamily:
+                              '"Inter Tight", system-ui, sans-serif',
                           }}
                         >
-                          {formatPrice(v.pricePublic)}
+                          {v.brand}
                         </Text>
-                      </Box>
 
-                      {/* Active indicator bar */}
-                      {isActive && (
-                        <Box
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: 3,
-                            background: TEAL,
-                          }}
-                        />
-                      )}
+                        <Box style={{ flex: 1, minHeight: 12 }} />
+
+                        <Group justify="space-between" align="center" mt={8}>
+                          <Text
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 800,
+                              color: "#1a2332",
+                              fontFamily:
+                                '"Inter Tight", system-ui, sans-serif',
+                            }}
+                          >
+                            {isRent && v.rentalPolicy?.pricePerDay
+                              ? formatPrice(v.rentalPolicy.pricePerDay)
+                              : formatPrice(v.pricePublic)}
+                            {isRent && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 400,
+                                  color: "#7a8a9e",
+                                }}
+                              >
+                                {" "}
+                                / {t("catalogue.perDay")}
+                              </span>
+                            )}
+                          </Text>
+
+                          <Box
+                            className="card-detail-btn"
+                            style={{
+                              padding: "5px 12px",
+                              borderRadius: 6,
+                              background: TEAL,
+                              color: "#FFFFFF",
+                              fontSize: 11,
+                              fontWeight: 700,
+                              fontFamily:
+                                '"Inter Tight", system-ui, sans-serif',
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {t("catalogue.viewVehicle")}
+                          </Box>
+                        </Group>
+                      </Box>
                     </Box>
-                  </UnstyledButton>
+                  </Link>
                 );
               })}
             </Box>
-          </Box>
-        </Box>
-      ) : (
-        /* ── Empty state ── */
-        <Box
-          style={{
-            maxWidth: 1400,
-            margin: "0 auto",
-            padding: "80px 32px",
-            textAlign: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.6)",
-              fontFamily: '"Inter Tight", system-ui, sans-serif',
-            }}
-          >
-            {t("catalogue.noVehicles")}
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "rgba(255,255,255,0.3)",
-              marginTop: 8,
-            }}
-          >
-            {t("catalogue.noVehiclesDesc")}
-          </Text>
-        </Box>
-      )}
 
-      {/* ── Global styles ── */}
+            {totalPages > 1 && (
+              <Group justify="center" mt={32} gap={8}>
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <UnstyledButton
+                    key={i}
+                    onClick={() => setPage(i)}
+                    style={{
+                      width: page === i ? 28 : 10,
+                      height: 10,
+                      borderRadius: 5,
+                      background: page === i ? TEAL : "#d4dede",
+                      transition: "all 0.3s ease",
+                    }}
+                  />
+                ))}
+              </Group>
+            )}
+          </Box>
+        ) : (
+          <Box style={{ textAlign: "center", padding: "60px 0" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: "#1a2332",
+                fontFamily: '"Inter Tight", system-ui, sans-serif',
+              }}
+            >
+              {t("catalogue.noVehicles")}
+            </Text>
+            <Text
+              style={{ fontSize: 14, color: "#7a8a9e", marginTop: 8 }}
+            >
+              {t("catalogue.noVehiclesDesc")}
+            </Text>
+            <UnstyledButton
+              onClick={resetFilters}
+              style={{
+                marginTop: 20,
+                padding: "10px 24px",
+                borderRadius: 8,
+                background: TEAL,
+                color: "#FFFFFF",
+                fontWeight: 600,
+                fontSize: 14,
+              }}
+            >
+              {t("catalogue.resetFilters")}
+            </UnstyledButton>
+          </Box>
+        )}
+      </Box>
+
       <style>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .thumb-nav-btn:hover {
-          background: rgba(255,255,255,0.14) !important;
-        }
-        @media (max-width: 900px) {
-          .showcase-main {
-            flex-direction: column !important;
+        @media (max-width: 1100px) {
+          .catalogue-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
           }
-          .specs-panel {
-            width: 100% !important;
-            border-radius: 16px 16px 0 0 !important;
-            border-right: 1px solid rgba(255,255,255,0.06) !important;
-            border-bottom: none !important;
-            order: 2 !important;
+        }
+        @media (max-width: 768px) {
+          .catalogue-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 14px !important;
           }
-          .showcase-main > div:last-child {
-            border-radius: 16px 16px 0 0 !important;
-            border-left: 1px solid rgba(255,255,255,0.04) !important;
-            min-height: 260px !important;
-            order: 1 !important;
+          .filter-divider {
+            display: none !important;
           }
+        }
+        @media (max-width: 480px) {
+          .catalogue-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        .grid-nav-btn:hover {
+          background: #f0faf9 !important;
+          border-color: ${TEAL} !important;
+        }
+        .catalogue-card:hover {
+          border-color: ${TEAL} !important;
+          box-shadow: 0 8px 24px rgba(79, 170, 163, 0.14) !important;
+          transform: translateY(-3px);
+        }
+        .catalogue-card:hover .card-img img {
+          transform: scale(1.04);
+        }
+        .catalogue-card .card-detail-btn {
+          opacity: 0;
+          transform: translateY(4px);
+          transition: all 0.25s ease;
+        }
+        .catalogue-card:hover .card-detail-btn {
+          opacity: 1;
+          transform: translateY(0);
         }
       `}</style>
     </Box>

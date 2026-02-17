@@ -116,7 +116,7 @@ export default function NewVehiclePage() {
           {/* City */}
           <div>
             <label className={labelClass}>{tVehicle("city")}</label>
-            <input name="city" required className={inputClass} placeholder="Douala" />
+            <input name="city" required className={inputClass} placeholder="Abidjan" />
           </div>
 
           {/* Status */}

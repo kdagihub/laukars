@@ -28,8 +28,8 @@ export function HeaderTransparent() {
   }> = [
     { label: t("home"), href: "/", isRoute: true },
     { label: t("catalogue"), href: "/catalogue", isRoute: true },
-    { label: t("contact"), href: "#", isRoute: false },
-    { label: t("about"), href: "#", isRoute: false },
+    { label: t("contact"), href: "/contact", isRoute: true },
+    { label: t("about"), href: "/a-propos", isRoute: true },
   ];
 
   const isActiveRoute = (href: string) => {

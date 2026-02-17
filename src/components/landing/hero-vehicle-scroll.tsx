@@ -220,7 +220,7 @@ export function HeroVehicleScroll() {
 
               <Button
                 component="a"
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "237600000000"}`}
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "2250797969394"}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 size="xl"

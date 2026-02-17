@@ -31,7 +31,7 @@ const LINK_STYLE = {
   lineHeight: 2.1,
 } as const;
 
-export function Footer() {
+export function LandingFooter() {
   const t = useTranslations();
 
   return (

@@ -253,3 +253,8 @@ erDiagram
     string metaJson
     datetime createdAt
   }
+
+
+```
+## #### RAPPEL CREATION DB ET PEUPLEMENT DE LA DB
+Pour rappel, la séquence à suivre quand tu supprimes la base est toujours : pnpm db:push (créer les tables) puis pnpm db:seed (remplir les données).
